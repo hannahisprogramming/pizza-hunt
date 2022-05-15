@@ -17,7 +17,7 @@ request.onsuccess = function(event) {
 
   //check if app is online, if yes call uploadPizza
   if(navigator.onLine) {
-    //uploadPizza();
+    uploadPizza();
   }
 };
 
@@ -36,3 +36,49 @@ function saveRecord(record) {
   //add record to your store w add method
   pizzaObjectStore.add(record);
 }
+
+function uploadPizza() {
+  //open db transaction
+  const transaction = db.transaction(['new_pizza'], 'readwrite');
+  
+  //access your objt store
+  const pizzaObjectStore = transaction.objectStore('new_pizza');
+
+  //get all record from store
+  const getAll = pizzaObjectStore.getAll();
+
+  //upon successful getall, run this
+  getAll.onsuccess = function() {
+    //if data, send to api server
+    if(getAll.result.length > 0) {
+      fetch('/api/pizzas', {
+        method: 'POST',
+        body: JSON.stringify(getAll.result),
+        headers: {
+          Accept: 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+        .then(serverResponse => {
+          if (serverResponse.message) {
+            throw new Error(serverResponse);
+          }
+          // open one more transaction
+          const transaction = db.transaction(['new_pizza'], 'readwrite');
+          // access the new_pizza object store
+          const pizzaObjectStore = transaction.objectStore('new_pizza');
+          // clear all items in your store
+          pizzaObjectStore.clear();
+
+          alert('All saved pizza has been submitted!');
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    } 
+  }
+}
+
+//listen for app coming back online
+window.addEventListener('online', uploadPizza);
