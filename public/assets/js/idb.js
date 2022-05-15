@@ -24,3 +24,15 @@ request.onsuccess = function(event) {
 request.onerror = function(event) {
   console.log(event.target.errorCode);
 };
+
+//executed if attempt to create new pizza w no internet connection
+function saveRecord(record) {
+  //open new transaction w db w read&write permissions
+  const transaction = db.transaction(['new_pizza'], 'readwrite');
+
+  //access object store for new pizza
+  const pizzaObjectStore = transaction.objectStore('new_pizza');
+
+  //add record to your store w add method
+  pizzaObjectStore.add(record);
+}
